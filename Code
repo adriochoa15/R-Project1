@@ -1,0 +1,103 @@
+library(rvest)
+library(dplyr)
+
+link <- "https://www.sporcle.com/games/ibkids/social-media-acronyms1/results"
+page <-  read_html(link)
+
+acronym  <- page %>% html_nodes(".name")  %>% html_text()
+answer  <- page %>% html_nodes(".col a") %>% html_text()
+percentage  <- page %>% html_nodes(".percent") %>% html_text()
+
+words <- data.frame(acronym, answer, percentage, stringsAsFactors = F)
+View(words)
+write.csv(words, "words.csv")
+
+link <- "https://www.yuqo.com/the-definitive-guide-to-social-media-acronyms/"
+page <- read_html(link)
+
+acronyms <- page %>% html_nodes("h5")  %>% html_text()
+
+
+link <- "https://avalon-linguistic.com/2018/12/14/the-ultimate-list-of-social-media-acronyms-and-abbreviations-with-definitions/"
+page <- read_html(link)
+
+abbreviations <-page %>% html_nodes("strong")  %>% html_text()
+
+words1 <- data.frame(acronyms, abbreviations, stringsAsFactors = F)
+View(words1)
+write.csv(words1, "words1.csv")
+
+
+
+#Creating a word cloud
+# loading in the libraries
+
+library(tm)
+library(wordcloud2)
+library(readr)
+library(dplyr)
+
+# loading in the file
+words_csv = read_csv("words1.csv", show_col_types = FALSE)
+
+# creating a corpus
+words.corpus = Corpus(VectorSource(words_csv))
+
+
+removeHTML = function(text){
+  text = gsub(pattern = '<.+\\">', '', text)
+  text = gsub(pattern = '<.+>', '', text)
+  return(text)
+}
+
+words.corpus = words.corpus %>%
+  tm_map(content_transformer(removeHTML)) %>%
+  tm_map(removeNumbers) %>%
+  tm_map(removePunctuation) %>%
+  tm_map(stripWhitespace) %>%
+  tm_map(content_transformer(tolower)) %>%
+  tm_map(removeWords, stopwords("english")) %>%
+  tm_map(removeWords, stopwords("SMART")) 
+
+tdm = TermDocumentMatrix(words.corpus) %>%
+  as.matrix()
+words = sort(rowSums(tdm), decreasing = T)
+df = data.frame(word = names(words), freq = words)
+
+wordcloud2(df)
+
+
+library(tm)
+library(wordcloud2)
+library(readr)
+library(dplyr)
+
+# loading in the file
+words_csv = read_csv("words.csv", show_col_types = FALSE)
+
+# creating a corpus
+words.corpus = Corpus(VectorSource(words_csv))
+
+
+removeHTML = function(text){
+  text = gsub(pattern = '<.+\\">', '', text)
+  text = gsub(pattern = '<.+>', '', text)
+  return(text)
+}
+
+words.corpus = words.corpus %>%
+  tm_map(content_transformer(removeHTML)) %>%
+  tm_map(removeNumbers) %>%
+  tm_map(removePunctuation) %>%
+  tm_map(stripWhitespace) %>%
+  tm_map(content_transformer(tolower)) %>%
+  tm_map(removeWords, stopwords("english")) %>%
+  tm_map(removeWords, stopwords("SMART")) 
+
+tdm = TermDocumentMatrix(words.corpus) %>%
+  as.matrix()
+words = sort(rowSums(tdm), decreasing = T)
+df = data.frame(word = names(words), freq = words)
+
+wordcloud2(df)
+
